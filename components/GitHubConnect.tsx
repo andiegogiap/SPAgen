@@ -3,9 +3,10 @@ import { SpinnerIcon } from './icons';
 
 interface GitHubConnectProps {
   onConnect: (token: string, repo: string) => Promise<void>;
+  onStartDemo: () => void;
 }
 
-const GitHubConnect: React.FC<GitHubConnectProps> = ({ onConnect }) => {
+const GitHubConnect: React.FC<GitHubConnectProps> = ({ onConnect, onStartDemo }) => {
   const [token, setToken] = useState('');
   const [repo, setRepo] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -83,6 +84,21 @@ const GitHubConnect: React.FC<GitHubConnectProps> = ({ onConnect }) => {
             {isLoading ? <SpinnerIcon /> : 'Connect'}
           </button>
         </form>
+        
+        <div className="relative flex items-center py-5">
+            <div className="flex-grow border-t border-neon-border"></div>
+            <span className="flex-shrink mx-4 text-text-main/70">OR</span>
+            <div className="flex-grow border-t border-neon-border"></div>
+        </div>
+
+        <button
+            type="button"
+            onClick={onStartDemo}
+            className="w-full flex justify-center items-center p-3 bg-neon-purple text-dark rounded-md font-bold text-lg transition-all duration-200 hover:shadow-glow-purple disabled:bg-gray-500"
+        >
+            Try the Demo
+        </button>
+
       </div>
     </div>
   );

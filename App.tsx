@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import ReactDOM from 'react-dom';
 import { AIResponse, ActiveTab, GenerationSettings, HistoryItem, GitHubNode, ActiveFile, Agent } from './types';
 import { EXAMPLE_PROMPTS } from './constants';
+import { DEMO_FILE_TREE, DEMO_FILE_CONTENTS } from './data/demo-files';
 import { generateAiResponse, generateSuggestion } from './services/geminiService';
 import * as githubService from './services/githubService';
 import GitHubConnect from './components/GitHubConnect';
@@ -25,6 +26,7 @@ function App() {
   const [githubToken, setGithubToken] = useState('');
   const [repo, setRepo] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [fileTree, setFileTree] = useState<GitHubNode[]>([]);
 
   const [activeFile, setActiveFile] = useState<ActiveFile | null>(null);
@@ -67,6 +69,14 @@ function App() {
     setIsEditorDirty(false);
   }, [activeFile]);
 
+  // Effect to auto-select first file in demo mode
+  useEffect(() => {
+    if (isDemoMode && fileTree.length > 0) {
+        handleFileSelect('home/smart-light.html');
+    }
+  }, [isDemoMode, fileTree]);
+
+
   const handleConnect = async (token: string, repoUrl: string) => {
     const [owner, repoName] = repoUrl.split('/');
     if (!owner || !repoName) {
@@ -77,13 +87,29 @@ function App() {
     setRepo(repoUrl);
     setFileTree(tree);
     setIsConnected(true);
+    setIsDemoMode(false);
+  };
+
+  const handleStartDemo = () => {
+    setFileTree(DEMO_FILE_TREE);
+    setRepo('demo/spa-generator');
+    setIsConnected(true);
+    setIsDemoMode(true);
   };
 
   const handleFileSelect = useCallback(async (path: string) => {
     setIsLoading(true);
+    setError(null);
     try {
-      const [owner, repoName] = repo.split('/');
-      const fileData = await githubService.getFileContent(githubToken, owner, repoName, path);
+      let fileData: { content: string; sha: string; };
+      if (isDemoMode) {
+        const content = DEMO_FILE_CONTENTS[path];
+        if (content === undefined) throw new Error("File not found in demo assets.");
+        fileData = { content, sha: 'demo_sha' };
+      } else {
+        const [owner, repoName] = repo.split('/');
+        fileData = await githubService.getFileContent(githubToken, owner, repoName, path);
+      }
       setActiveFile({ path, ...fileData });
       if (activeMainTab === 'preview' && !path.endsWith('.html')) {
         setActiveMainTab('editor');
@@ -93,10 +119,10 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [githubToken, repo, activeMainTab, setActiveMainTab]);
+  }, [githubToken, repo, activeMainTab, isDemoMode]);
   
   const handleCommit = async (commitMessage: string) => {
-    if (!activeFile || !isEditorDirty) return;
+    if (!activeFile || !isEditorDirty || isDemoMode) return;
     setIsLoading(true);
     try {
         const [owner, repoName] = repo.split('/');
@@ -217,7 +243,7 @@ function App() {
   };
 
   if (!isConnected) {
-    return <GitHubConnect onConnect={handleConnect} />;
+    return <GitHubConnect onConnect={handleConnect} onStartDemo={handleStartDemo} />;
   }
 
   return (
@@ -278,6 +304,7 @@ function App() {
           setActiveMainTab={setActiveMainTab}
           activeInferenceTab={activeInferenceTab}
           setActiveInferenceTab={setActiveInferenceTab}
+          isDemoMode={isDemoMode}
         />
         {!isRightPanelCollapsed && <ResizeHandle onMouseDown={(e) => startResize(e, 'right')} />}
         <ResponsePanel response={aiResponse} hasResponse={hasResponse} activeTab={responseActiveTab} onTabChange={setResponseActiveTab} isLoading={isLoading} error={error} onToggleCollapse={toggleRightPanel} isCollapsed={isRightPanelCollapsed} suggestedPrompts={suggestedPrompts} onExamplePromptClick={handleExamplePromptClick} aiHint={aiHint} />

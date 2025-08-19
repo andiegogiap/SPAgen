@@ -31,6 +31,7 @@ interface CentralPanelProps {
   setActiveMainTab: (tab: MainTab) => void;
   activeInferenceTab: InferenceTab;
   setActiveInferenceTab: (tab: InferenceTab) => void;
+  isDemoMode?: boolean;
 }
 
 const TabButton: React.FC<{ label: string; isActive: boolean; onClick: () => void; }> = ({ label, isActive, onClick }) => (
@@ -77,7 +78,7 @@ const CentralPanel: React.FC<CentralPanelProps> = (props) => {
     prompt, onPromptChange, onGenerate, isLoading, onSuggest, isSuggesting, 
     examplePrompts, onExamplePromptClick, settings, onSettingsChange, history, 
     onRestoreHistory, agent, onAgentChange, activeMainTab, setActiveMainTab, 
-    activeInferenceTab, setActiveInferenceTab 
+    activeInferenceTab, setActiveInferenceTab, isDemoMode
   } = props;
   
   const [currentPage, setCurrentPage] = useState(1);
@@ -109,7 +110,7 @@ const CentralPanel: React.FC<CentralPanelProps> = (props) => {
       <iframe
         title="Live Preview"
         srcDoc={editorContent}
-        className="w-full h-full border-0 bg-white"
+        className="w-full h-full border-0 bg-neon-dark"
         sandbox="allow-scripts allow-forms allow-same-origin"
       />
     </div>
@@ -125,7 +126,8 @@ const CentralPanel: React.FC<CentralPanelProps> = (props) => {
                 <span className="text-sm text-text-main">{activeFile.path}</span>
                 <button
                     onClick={() => setShowCommitModal(true)}
-                    disabled={!isEditorDirty || isLoading}
+                    disabled={!isEditorDirty || isLoading || isDemoMode}
+                    title={isDemoMode ? "Commit is disabled in Demo Mode" : "Commit changes"}
                     className="flex items-center gap-2 px-3 py-1 text-xs bg-neon-green text-dark rounded-md font-bold transition-all duration-200 hover:shadow-glow-green disabled:bg-gray-500 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                     <GitCommitIcon />
