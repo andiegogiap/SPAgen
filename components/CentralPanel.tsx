@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Editor from "@monaco-editor/react";
-import { SpinnerIcon, LightbulbIcon, HistoryIcon, GitCommitIcon, CreativeIcon, TechnicalIcon, OrchestrationIcon } from './icons';
+import { SpinnerIcon, LightbulbIcon, HistoryIcon, GitCommitIcon, CreativeIcon, TechnicalIcon, OrchestrationIcon, PanelRightOpenIcon, PanelRightCloseIcon } from './icons';
 import { GenerationSettings, AiProvider, HistoryItem, ActiveFile, Agent } from '../types';
 import AgentSelector from './AgentSelector';
 
@@ -83,8 +83,13 @@ const CentralPanel: React.FC<CentralPanelProps> = (props) => {
   
   const [currentPage, setCurrentPage] = useState(1);
   const [showCommitModal, setShowCommitModal] = useState(false);
+  const [showSidePreview, setShowSidePreview] = useState(false);
   const isHtmlFile = activeFile?.path.endsWith('.html');
   
+  useEffect(() => {
+    setShowSidePreview(false);
+  }, [activeFile]);
+
   const totalPages = Math.ceil(examplePrompts.length / PROMPTS_PER_PAGE);
   const currentPrompts = examplePrompts.slice((currentPage - 1) * PROMPTS_PER_PAGE, currentPage * PROMPTS_PER_PAGE);
 
@@ -124,6 +129,15 @@ const CentralPanel: React.FC<CentralPanelProps> = (props) => {
         {activeFile ? (
             <div className="flex items-center gap-4">
                 <span className="text-sm text-text-main">{activeFile.path}</span>
+                 {isHtmlFile && (
+                    <button
+                        onClick={() => setShowSidePreview(p => !p)}
+                        title="Toggle Side Preview"
+                        className={`p-1 rounded-md transition-colors ${showSidePreview ? 'bg-primary/20 text-primary' : 'text-text-main/70 hover:bg-neon-input'}`}
+                    >
+                        {showSidePreview ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
+                    </button>
+                )}
                 <button
                     onClick={() => setShowCommitModal(true)}
                     disabled={!isEditorDirty || isLoading || isDemoMode}
@@ -138,31 +152,45 @@ const CentralPanel: React.FC<CentralPanelProps> = (props) => {
              <span className="text-sm text-text-main/60">No file selected</span>
         )}
       </div>
-      <Editor
-        height="100%"
-        language={activeFile?.path.split('.').pop() ?? 'plaintext'}
-        value={editorContent}
-        onChange={onEditorChange}
-        theme="vs-dark"
-        options={{
-            minimap: { enabled: false },
-            fontSize: 14,
-            wordWrap: 'on',
-            scrollBeyondLastLine: false,
-            automaticLayout: true,
-        }}
-        onMount={(editor, monaco) => {
-            monaco.editor.defineTheme('neon-dark', {
-                base: 'vs-dark',
-                inherit: true,
-                rules: [],
-                colors: {
-                    'editor.background': '#1a1a1a',
-                },
-            });
-            monaco.editor.setTheme('neon-dark');
-        }}
-      />
+       <div className="flex-grow flex flex-row min-h-0">
+        <div className={`relative ${showSidePreview && isHtmlFile ? 'w-1/2 h-full' : 'w-full h-full'}`}>
+            <Editor
+                height="100%"
+                language={activeFile?.path.split('.').pop() ?? 'plaintext'}
+                value={editorContent}
+                onChange={onEditorChange}
+                theme="vs-dark"
+                options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    wordWrap: 'on',
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                }}
+                onMount={(editor, monaco) => {
+                    monaco.editor.defineTheme('neon-dark', {
+                        base: 'vs-dark',
+                        inherit: true,
+                        rules: [],
+                        colors: {
+                            'editor.background': '#1a1a1a',
+                        },
+                    });
+                    monaco.editor.setTheme('neon-dark');
+                }}
+            />
+        </div>
+        {showSidePreview && isHtmlFile && (
+            <div className="w-1/2 h-full border-l-2 border-neon-border">
+                <iframe
+                    title="Side Preview"
+                    srcDoc={editorContent}
+                    className="w-full h-full border-0 bg-neon-dark"
+                    sandbox="allow-scripts allow-forms allow-same-origin"
+                />
+            </div>
+        )}
+      </div>
     </div>
   );
   

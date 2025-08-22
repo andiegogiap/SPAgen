@@ -140,10 +140,10 @@ const ResponsePanel: React.FC<ResponsePanelProps> = ({
           <script src="https://unpkg.com/petite-vue" init defer></script>
           <style>
             :root {
-                --background-body: transparent;
+                --background-body: #1a1a1a;
             }
             body { 
-              background-color: transparent; 
+              background-color: #1a1a1a; 
               color: #e0e0e0; 
               font-family: sans-serif;
               padding: 1rem;
